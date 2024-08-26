@@ -1,0 +1,20 @@
+[gd_scene load_steps=5 format=3 uid="uid://0ukf77cbnt3c"]
+
+[ext_resource type="Shader" path="res://shaders/water.gdshader" id="1_bbhn2"]
+[ext_resource type="Shader" path="res://shaders/circle.gdshader" id="1_tvpyx"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kga8j"]
+shader = ExtResource("1_tvpyx")
+shader_parameter/color = Vector4(0.2, 0.5, 0.9, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xj4om"]
+shader = ExtResource("1_bbhn2")
+shader_parameter/gravity = 10.0
+shader_parameter/collision_damping = 1.0
+shader_parameter/boundsSize = 200.0
+shader_parameter/particleSize = 3.0
+
+[node name="Water" type="GPUParticles2D"]
+material = SubResource("ShaderMaterial_kga8j")
+emitting = false
+process_material = SubResource("ShaderMaterial_xj4om")
