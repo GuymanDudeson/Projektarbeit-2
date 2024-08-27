@@ -2,7 +2,7 @@ shader_type particles;
 
 uniform float gravity = 10;
 uniform float collision_damping = 1;
-uniform float boundsSize = 100;
+uniform float boundsSize = 400;
 uniform float particleSize = 3; 
 
 
