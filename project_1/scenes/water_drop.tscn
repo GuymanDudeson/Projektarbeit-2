@@ -1,0 +1,26 @@
+[gd_scene load_steps=6 format=3 uid="uid://dbmmxt8t526db"]
+
+[ext_resource type="Script" path="res://scripts/water_drop.gd" id="1_0ajnw"]
+[ext_resource type="Shader" path="res://shaders/circle.gdshader" id="1_mcy8g"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_f85wu"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6mglu"]
+shader = ExtResource("1_mcy8g")
+shader_parameter/color = Vector4(0.2, 0.5, 0.9, 1)
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_ubqwi"]
+
+[node name="WaterDrop" type="CharacterBody2D"]
+script = ExtResource("1_0ajnw")
+
+[node name="WaterBounds" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_f85wu")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_6mglu")
+texture = SubResource("CanvasTexture_ubqwi")
+
+[connection signal="draw" from="." to="." method="_on_draw"]
+[connection signal="ready" from="." to="." method="_on_ready"]
+[connection signal="ready" from="Sprite2D" to="." method="_on_sprite_2d_ready"]
