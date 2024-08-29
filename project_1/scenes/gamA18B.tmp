@@ -4,6 +4,13 @@
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_k7qe0")
+collision_damping = null
+bounds_size = null
+particle_size = null
+gravity = null
+number_of_particles = null
+starting_density = null
+smoothing_radius = null
 
 [node name="Camera2D" type="Camera2D" parent="."]
 
