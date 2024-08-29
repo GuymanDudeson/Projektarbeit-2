@@ -23,8 +23,12 @@ var gravity: float;
 
 var densities: Dictionary;
 
+var sample_density: float;
+
 
 func smoothing_kernel(radius: float, dist: float) -> float:
+	## Volume calculation formular for the volume of the smoothing function as given by Wolfram Alpha
+	var volume = PI * pow(radius, 8) / 4;
 	var value = max(0, radius * radius - dist * dist);
-	return value * value * value;
+	return value * value * value / volume;
 	

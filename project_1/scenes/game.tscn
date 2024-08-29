@@ -1,10 +1,21 @@
-[gd_scene load_steps=2 format=3 uid="uid://cg67cntaunmm6"]
+[gd_scene load_steps=3 format=3 uid="uid://cg67cntaunmm6"]
 
 [ext_resource type="Script" path="res://scripts/simulation.gd" id="1_k7qe0"]
+[ext_resource type="Script" path="res://scripts/density_label.gd" id="2_spxrk"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_k7qe0")
+number_of_particles = 200
+starting_density = 2
 
 [node name="Camera2D" type="Camera2D" parent="."]
+
+[node name="Label" type="Label" parent="."]
+offset_left = 341.0
+offset_top = -314.0
+offset_right = 562.0
+offset_bottom = -291.0
+text = "Density: "
+script = ExtResource("2_spxrk")
 
 [connection signal="draw" from="." to="." method="_on_draw"]

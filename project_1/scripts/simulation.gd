@@ -47,7 +47,13 @@ extends Node2D
 		spawn_particles_as_grid();
 		
 @export var starting_density: int = 10;
-@export var smoothing_radius: float = 70;
+@export var smoothing_radius: float = 70:
+	get:
+		return smoothing_radius;
+	set(value):
+		smoothing_radius = value;
+		calculate_density(smoothing_radius_position)
+		
 var smoothing_radius_position: Vector2;
 
 var scene_to_instance = preload("res://scenes/water_drop.tscn")
@@ -114,7 +120,9 @@ func calculate_density(samplePoint: Vector2) -> float:
 			var dist = (currentPosition - samplePoint).length();
 			var influence = Global.smoothing_kernel(smoothing_radius, dist);
 			density += mass * influence;
+			
 	print("Density: ", density);
+	Global.sample_density = density * 100;
 	return density;
 
 func _on_draw() -> void:
