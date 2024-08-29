@@ -100,6 +100,11 @@ func _ready() -> void:
 	Global.pressure_multiplier = pressure_multiplier;
 	Global.show_pressure_direction_debug = show_pressure_direction_debug;
 	
+	Global.spatial_lookup.resize(number_of_particles);
+	Global.spatial_lookup.fill(Vector2i());
+	Global.start_indices.resize(number_of_particles);
+	Global.start_indices.fill(9223372036854775807);
+	
 	Global.positions.resize(number_of_particles);
 	Global.positions.fill(Vector2());
 	Global.velocities.resize(number_of_particles);
@@ -130,21 +135,62 @@ func _process(delta: float) -> void:
 		#if(i is CharacterBody2D):
 			#Global.colors[i.get_instance_id()] = Vector4(rng.randf_range(0,1), rng.randf_range(0,1), rng.randf_range(0,1), 1.0);
 	if Global.simulate_physics:
-		update_densities();
-		update_pressures();
+		update_spatial_lookup();
+		
+		for i in Global.number_of_particles:
+			foreach_point_within_radius(i);
+			
 		update_velocities(delta);
 		update_positions(delta);
 		resolve_collision();
 	queue_redraw();
 
+func foreach_point_within_radius(origin_particle_index: int) -> void:
+	var cell_of_sample = HashHelpers.position_to_cell_coord(Global.positions[origin_particle_index], smoothing_radius);
+	var sqr_radius = smoothing_radius * smoothing_radius;
+	
+	for cell_offset in HashHelpers.cell_offsets:
+		var key = HashHelpers.get_key_from_hash(HashHelpers.hash_cell(cell_of_sample.x + cell_offset.x, cell_of_sample.y + cell_offset.y));
+		var cell_start_index = Global.start_indices[key];
+		
+		for i in [cell_start_index, Global.spatial_lookup.size()]:
+			if Global.spatial_lookup[i].y != key: break;
+			var particle_index = Global.spatial_lookup[i].x;
+			var sqr_distance = (Global.positions[particle_index] - Global.positions[origin_particle_index]).length_squared();
+			
+			if sqr_distance <= sqr_radius:
+				update_densities();
+				update_pressures();
+	
+
+#region spatial_lookup
+
+func update_spatial_lookup() -> void:
+	for i in Global.number_of_particles:
+		var cell = HashHelpers.position_to_cell_coord(Global.positions[i], smoothing_radius);
+		var cell_key = HashHelpers.get_key_from_hash(HashHelpers.hash_cell(cell.x, cell.y))
+		Global.spatial_lookup[i] = Vector2(i, cell_key);
+		Global.start_indices[i] = 9223372036854775807;
+		
+	Global.spatial_lookup.sort_custom(sort_by_cell);
+		
+	for i in Global.number_of_particles:
+		var key = Global.spatial_lookup[i].y;
+		var keyPrev = 9223372036854775807 if i == 0 else Global.spatial_lookup[i - 1].y
+		if key != keyPrev:
+			Global.start_indices[key] = i;
+
+
+#endregion
+
 #region densities
 
 func update_densities() -> void:
 	for i in Global.number_of_particles:
-		Global.densities[i] = calculate_density(false, i) * 1000;
+		Global.densities[i] = calculate_density(i) * 1000;
 
 ## Calculates the densitiy of particles at a specific point inside of a set radius
-func calculate_density(debug: bool, particle_index: int) -> float:
+func calculate_density(particle_index: int) -> float:
 	var density = 0.0;
 	
 	## Loop over all children that are water_drops and calculate their distance to the sample point
@@ -233,6 +279,9 @@ func calculate_position(particle_index: int, delta: float) -> Vector2:
 #endregions
 
 #region misc
+
+func sort_by_cell(a: Vector2i, b: Vector2i):
+	return a.y < b.y;
 
 func get_random_direction() -> Vector2:
 	return Vector2(rng.randf(), rng.randf());

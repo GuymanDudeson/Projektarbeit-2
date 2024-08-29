@@ -31,6 +31,9 @@ var velocities: Array;
 var densities: Array;
 var pressures: Array;
 
+var spatial_lookup: Array;
+var start_indices: Array;
+
 var colors: Dictionary;
 
 var sample_density: float;
