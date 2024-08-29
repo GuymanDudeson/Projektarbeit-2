@@ -11,10 +11,7 @@ var bounds_rectangle: Rect2;
 var collision_damping : float;
 
 ## The total number of particles in the scene
-var number_of_particles: float;
-
-## The scale of the individual particles
-var particle_scale: float;
+var number_of_particles: int;
 
 ## The downwards force applied every frame to each particle
 var gravity: float;
@@ -25,10 +22,14 @@ var target_density: float;
 ## How fast/strong a particle should move along it's gradient every step to reach the target density
 var pressure_multiplier: float;
 
-#endregion
+## Whether the particles should show a small green line indicating where pressure is pushing them
+var show_pressure_direction_debug: bool;
 
-var densities: Dictionary;
-var pressures: Dictionary;
+#endregion
+var positions: Array;
+var velocities: Array;
+var densities: Array;
+var pressures: Array;
 
 var colors: Dictionary;
 
@@ -39,18 +40,24 @@ func convert_density_to_pressure(density: float) -> float:
 	var density_error = density - target_density;
 	var pressure = density_error * pressure_multiplier;
 	return pressure;
-
+	
+func calculate_shared_pressure(densityA: float, densityB: float) -> float:
+	var pressureA = convert_density_to_pressure(densityA);
+	var pressureB = convert_density_to_pressure(densityB);
+	return (pressureA + pressureB) / 2;
+	
 func smoothing_kernel(radius: float, dist: float) -> float:
+	if dist >= radius: return 0;
+	
 	## Volume calculation formular for the volume of the smoothing function as given by Wolfram Alpha
-	var volume = PI * pow(radius, 8) / 4;
-	var value = max(0, radius * radius - dist * dist);
-	return value * value * value / volume;
+	var volume = PI * pow(radius, 4) / 6;
+	return (radius - dist) * (radius - dist) / volume;
 
 func smoothing_kernel_derivative(radius: float, dist: float) -> float:
 	## Particle is outside of the smoothing radius => Influence of this point will be 0
 	if dist >= radius: return 0;
-	var f = radius * radius - dist * dist;
+	
 	## Derivative of the smoothing function as given by Wolfram Alpha
-	var scale = -24 / (PI * pow(radius, 8));
-	return scale * dist * f * f;
+	var scale = 12 / (PI * pow(radius, 4));
+	return scale * (dist - radius);
 	
