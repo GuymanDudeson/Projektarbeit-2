@@ -6,7 +6,6 @@ const my_scene: PackedScene = preload("res://scenes/water_drop.tscn");
 @export var starting_position: Vector2;
 
 var sprite: Sprite2D;
-var timer_accumulator = 0.0;
 
 static func new_water_drop(startingPosition: Vector2) -> Water_Drop:
 	var water_drop: Water_Drop = my_scene.instantiate();
@@ -24,21 +23,31 @@ func _on_ready() -> void:
 	#var new_material_instance = sprite.material.duplicate();
 	#sprite.set_material(new_material_instance);
 
+func _on_draw() -> void:
+	if(Global.pressures.has(self.get_instance_id())):
+		draw_line(Vector2(0,0), 5 * -Global.pressures[self.get_instance_id()].normalized(), Color.GREEN);
+	
 #region PhysicsProcessing
 
 func _physics_process(delta: float) -> void:
 	if(!Global.simulate_physics): return;
+	var instanceId = self.get_instance_id();
+
+	if Global.pressures.has(instanceId) and Global.densities.has(instanceId):
+		var pressure_acceleration = -Global.pressures[instanceId] / Global.densities[instanceId];
+		velocity += pressure_acceleration * delta;
 	
 	velocity += Vector2.DOWN * Global.gravity * delta;
 	position += velocity * delta;
+	
+	resolve_collision();
+	queue_redraw()
 	
 	#timer_accumulator += delta
 	#if(timer_accumulator >= 1.0):
 		#if(Global.densities.has(self.get_instance_id())):
 			#sprite.material.set_shader_parameter("color", Global.densities[self.get_instance_id()]);
 		#timer_accumulator = 0.0;
-	
-	resolve_collision();
 
 func resolve_collision() -> void: 
 	var bounds_adjusted = abs(Global.bounds_rectangle.position) - Vector2(1.0, 1.0) * Global.particle_scale;

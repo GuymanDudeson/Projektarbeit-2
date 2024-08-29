@@ -6,11 +6,7 @@
 [node name="Game" type="Node2D"]
 script = ExtResource("1_k7qe0")
 simulate_physics = true
-gravity = 0.0
-number_of_particles = 5
-target_density = 6.425
-pressure_multiplier = 0.995
-smoothing_radius = 100.0
+starting_density = 2
 
 [node name="Camera2D" type="Camera2D" parent="."]
 

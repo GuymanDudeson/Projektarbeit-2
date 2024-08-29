@@ -1,5 +1,6 @@
 extends Node2D
 
+#region inputs_with_global_effect
 @export var simulate_physics: bool:
 	get:
 		return simulate_physics;
@@ -46,33 +47,61 @@ extends Node2D
 		Global.number_of_particles = value;
 		spawn_particles_as_grid();
 		
-@export var starting_density: int = 10;
-@export var smoothing_radius: float = 70:
+@export var target_density: float = 10:
+	get:
+		return target_density;
+	set(value):
+		target_density = value;
+		Global.target_density = value;
+		
+@export var pressure_multiplier: float = 1:
+	get:
+		return pressure_multiplier;
+	set(value):
+		pressure_multiplier = value;
+		Global.pressure_multiplier = value;
+		
+#endregion		
+		
+@export var smoothing_radius: float = 50:
 	get:
 		return smoothing_radius;
 	set(value):
 		smoothing_radius = value;
-		calculate_density(smoothing_radius_position)
+		calculate_density(true, smoothing_radius_position)
 		
+@export var starting_density: int = 10;
+
 var smoothing_radius_position: Vector2;
+var mass = 1;
 
 var scene_to_instance = preload("res://scenes/water_drop.tscn")
 var rng = RandomNumberGenerator.new();
 
+#region Debugging	
+func _input(event):
+	if event is InputEventMouseButton and event.is_pressed():
+		calculate_density(true, get_global_mouse_position());
+		smoothing_radius_position = get_global_mouse_position();
+#endregion
+
+#region Startup
+
 func _ready() -> void:
 	#region Global_Init
 	
+	bounds_size = bounds_size;
 	Global.simulate_physics = simulate_physics;
 	Global.collision_damping = collision_damping;
-	bounds_size = bounds_size;
 	Global.particle_scale = particle_scale;
 	Global.gravity = gravity;
 	Global.number_of_particles = number_of_particles;
+	Global.target_density = target_density;
+	Global.pressure_multiplier = pressure_multiplier;
 	
 	#endregion
 	spawn_particles_as_grid();
-	
-			
+
 func spawn_particles_as_grid() -> void:
 	clear_all_particles();
 	
@@ -85,31 +114,39 @@ func spawn_particles_as_grid() -> void:
 			if(drawn >= Global.number_of_particles): continue;
 			var x = squareOrigin + j * singleParticleSpace;
 			var y = squareOrigin + i * singleParticleSpace;
-			add_child(Water_Drop.new_water_drop(Vector2(x, y)));
+			var starting_position = Vector2(x, y);
+			var new_drop = Water_Drop.new_water_drop(starting_position);
+			add_child(new_drop);
 			drawn += 1;
 
 func clear_all_particles() -> void:
+	
 	for i in self.get_children():
 		if(i is CharacterBody2D):
 			remove_child(i);
 			i.queue_free();
 
-func _process(_delta: float) -> void:
-	for i in self.get_children():
-		if(i is CharacterBody2D):
-			Global.densities[i.get_instance_id()] = Vector4(rng.randf_range(0,1), rng.randf_range(0,1), rng.randf_range(0,1), 1.0);
-	queue_redraw();
-		
-func _input(event):
-	if event is InputEventMouseButton and event.is_pressed():
-		calculate_density(get_global_mouse_position());
-		smoothing_radius_position = get_global_mouse_position();
-		
+#endregion
 
-## Calculates the densitiy of particles at a specific point
-func calculate_density(samplePoint: Vector2) -> float:
+
+func _process(delta: float) -> void:
+	#for i in self.get_children():
+		#if(i is CharacterBody2D):
+			#Global.colors[i.get_instance_id()] = Vector4(rng.randf_range(0,1), rng.randf_range(0,1), rng.randf_range(0,1), 1.0);
+	update_densities();
+	update_pressures();
+	queue_redraw();
+
+#region densities
+
+func update_densities() -> void:
+	for particle in self.get_children():
+		if(particle is CharacterBody2D):
+			Global.densities[particle.get_instance_id()] = calculate_density(false, particle.position) * 1000;
+
+## Calculates the densitiy of particles at a specific point inside of a set radius
+func calculate_density(debug: bool, samplePoint: Vector2) -> float:
 	var density = 0.0;
-	var mass = 1;
 	
 	## Loop over all children that are water_drops and calculate their distance to the sample point
 	## With that distance we can calculate the influence depending on our smoothing radius + smoothing function
@@ -121,9 +158,43 @@ func calculate_density(samplePoint: Vector2) -> float:
 			var influence = Global.smoothing_kernel(smoothing_radius, dist);
 			density += mass * influence;
 			
-	print("Density: ", density);
+	if debug: print("Density: ", density);
+	
 	Global.sample_density = density * 100;
 	return density;
+
+#endregion
+
+#region pressure
+
+func update_pressures() -> void:
+	for particle in self.get_children():
+		if(particle is CharacterBody2D):
+			Global.pressures[particle.get_instance_id()] = calculate_pressure_force(particle);
+
+## Check a point next to the origin of the sample on the x and y axis and calculate how big the difference is between the origin and the steps
+## Afterwards build a vector that points towards the biggest possible change
+func calculate_pressure_force(particle: CharacterBody2D) -> Vector2:
+	var pressure_force = Vector2.ZERO;
+	var particle_position = particle.position;
+	
+	for i in self.get_children():
+		if(i is CharacterBody2D):
+			if particle.get_instance_id() == i.get_instance_id(): continue;
+			
+			var current_particle_position = i.position;
+			var dist = (current_particle_position - particle_position).length();
+			var dir = get_random_direction() if dist == 0 else (current_particle_position - particle_position) / dist;
+			var slope = Global.smoothing_kernel_derivative(smoothing_radius, dist) * 1000000;
+			var density = Global.densities[i.get_instance_id()];
+			var density_pressure = -Global.convert_density_to_pressure(density);
+			pressure_force += -density_pressure * dir * slope * mass / density;
+	return pressure_force;
+
+#endregion
+
+func get_random_direction() -> Vector2:
+	return Vector2(rng.randf(), rng.randf());
 
 func _on_draw() -> void:
 	draw_rect(Global.bounds_rectangle, Color.WHEAT, false, 5);
