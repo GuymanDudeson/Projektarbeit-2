@@ -62,7 +62,7 @@ func smoothing_kernel(radius: float, dist: float) -> float:
 	
 	## Volume calculation formular for the volume of the smoothing function as given by Wolfram Alpha
 	var volume = PI * pow(radius, 4) / 6;
-	return (radius - dist) * (radius - dist) / volume;
+	return (radius - dist) * (radius - dist) * (radius - dist) / volume;
 
 func smoothing_kernel_derivative(radius: float, dist: float) -> float:
 	## Particle is outside of the smoothing radius => Influence of this point will be 0

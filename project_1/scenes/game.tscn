@@ -1,17 +1,19 @@
-[gd_scene load_steps=4 format=3 uid="uid://cg67cntaunmm6"]
+[gd_scene load_steps=5 format=3 uid="uid://cg67cntaunmm6"]
 
 [ext_resource type="Script" path="res://scripts/simulation.gd" id="1_k7qe0"]
 [ext_resource type="Script" path="res://scripts/density_label.gd" id="2_spxrk"]
 [ext_resource type="Script" path="res://scripts/cell_key_label.gd" id="3_qgg2x"]
+[ext_resource type="Script" path="res://scripts/fps.gd" id="4_ehtha"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_k7qe0")
-particle_size = 8.0
+simulate_physics = true
+particle_size = 4.0
 gravity = 0.0
-number_of_particles = 220
+number_of_particles = 250
 target_density = 0.5
-pressure_multiplier = 10.0
-show_spatial_grid = true
+pressure_multiplier = 2.0
+show_pressure_direction_debug = true
 smoothing_radius = 100.0
 particle_spacing = 20
 
@@ -26,11 +28,19 @@ text = "Density: "
 script = ExtResource("2_spxrk")
 
 [node name="Cellkey_Label" type="Label" parent="."]
-offset_left = -572.0
+offset_left = 200.0
 offset_top = -324.0
-offset_right = -351.0
+offset_right = 421.0
 offset_bottom = -301.0
 text = "Cell Key:  "
 script = ExtResource("3_qgg2x")
+
+[node name="FPS_Label" type="Label" parent="."]
+offset_left = -576.0
+offset_top = -324.0
+offset_right = -355.0
+offset_bottom = -301.0
+text = "FPS:  "
+script = ExtResource("4_ehtha")
 
 [connection signal="draw" from="." to="." method="_on_draw"]
