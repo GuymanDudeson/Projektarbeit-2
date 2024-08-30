@@ -20,6 +20,10 @@ config/icon="res://icon.svg"
 Global="*res://scripts/global.gd"
 HashHelpers="*res://scripts/hash_helpers.gd"
 
+[display]
+
+window/size/mode=2
+
 [dotnet]
 
 project/assembly_name="Project_1"

@@ -26,7 +26,3 @@ func hash_cell(cell_x: int, cell_y: int) -> int:
 	var a: int = cell_x * 16001 if sign(cell_x) != -1 else cell_x * 139999;
 	var b: int = cell_y * 9737333 if sign(cell_y) != -1 else cell_y * 9599977;
 	return abs(a + b);
-	
-func get_key_from_hash(input_hash: int) -> int:
-	var result = input_hash % Global.spatial_lookup.size();
-	return result;
