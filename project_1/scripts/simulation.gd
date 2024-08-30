@@ -56,12 +56,8 @@ extends Node2D
 		pressure_multiplier = value;
 		Global.pressure_multiplier = value;
 		
-@export var show_pressure_direction_debug: bool = false:
-	get:
-		return show_pressure_direction_debug;
-	set(value):
-		show_pressure_direction_debug = value;
-		Global.show_pressure_direction_debug = value;
+@export var show_pressure_direction_debug: bool = false;
+@export var show_spatial_grid: bool = false;
 		
 #endregion		
 		
@@ -70,11 +66,11 @@ extends Node2D
 		return smoothing_radius;
 	set(value):
 		smoothing_radius = value;
-		calculate_density_at_point(true, smoothing_radius_position)
+		calculate_density_at_point_full_iteration(true, last_mouse_click)
 		
 @export var particle_spacing: int = 10;
 
-var smoothing_radius_position: Vector2;
+var last_mouse_click: Vector2;
 var mass = 1;
 
 var rng = RandomNumberGenerator.new();
@@ -82,8 +78,10 @@ var rng = RandomNumberGenerator.new();
 #region Debugging	
 func _input(event):
 	if event is InputEventMouseButton and event.is_pressed():
-		calculate_density_at_point(true, get_global_mouse_position());
-		smoothing_radius_position = get_global_mouse_position();
+		calculate_density_at_point_full_iteration(true, get_global_mouse_position());
+		last_mouse_click = get_global_mouse_position();
+		Global.sample_cell_coords = HashHelpers.position_to_cell_coord(last_mouse_click, smoothing_radius);
+		Global.sample_cell_key = HashHelpers.get_key_from_hash(HashHelpers.hash_cell(Global.sample_cell_coords.x, Global.sample_cell_coords.y))
 #endregion
 
 #region Startup
@@ -98,7 +96,6 @@ func _ready() -> void:
 	Global.number_of_particles = number_of_particles;
 	Global.target_density = target_density;
 	Global.pressure_multiplier = pressure_multiplier;
-	Global.show_pressure_direction_debug = show_pressure_direction_debug;
 	
 	Global.spatial_lookup.resize(number_of_particles);
 	Global.spatial_lookup.fill(Vector2i());
@@ -131,36 +128,50 @@ func spawn_particles_as_grid() -> void:
 
 
 func _process(delta: float) -> void:
-	#for i in self.get_children():
-		#if(i is CharacterBody2D):
-			#Global.colors[i.get_instance_id()] = Vector4(rng.randf_range(0,1), rng.randf_range(0,1), rng.randf_range(0,1), 1.0);
+	update_spatial_lookup();
 	if Global.simulate_physics:
-		update_spatial_lookup();
-		
+		## Reset the densities and pressures to start accumulating again
+		Global.densities.fill(0.0);
+		Global.pressures.fill(Vector2());
 		for i in Global.number_of_particles:
-			foreach_point_within_radius(i);
+			foreach_point_within_radius(i, accumulate_density);
+			foreach_point_within_radius(i, accumulate_pressure);
 			
 		update_velocities(delta);
 		update_positions(delta);
 		resolve_collision();
 	queue_redraw();
 
-func foreach_point_within_radius(origin_particle_index: int) -> void:
+func foreach_point_within_radius(origin_particle_index: int, callable: Callable) -> void:
+	## Takes the position-vector of the origin particle and translates it to the coordinate of a gridcell with size "smoothing_radius"
+	## This builds  a grid of "smoothing-radius" sized cells which can be addressed by an x/y cell coord 
 	var cell_of_sample = HashHelpers.position_to_cell_coord(Global.positions[origin_particle_index], smoothing_radius);
+	
 	var sqr_radius = smoothing_radius * smoothing_radius;
 	
+	## Iterate though all grid cells that are next to the origin in a 3x3 fashion
+	## This guarantees that the entire "smoothing_radius" of every possible point in the origin cell is considered for the density/pressure
 	for cell_offset in HashHelpers.cell_offsets:
+		## Get the Key of one of the cells in the 3x3 grid around the origin
 		var key = HashHelpers.get_key_from_hash(HashHelpers.hash_cell(cell_of_sample.x + cell_offset.x, cell_of_sample.y + cell_offset.y));
+		
+		## Use the start_indeces to get the index in the spatial_lookup of where the mapping of all the particles of that grid lies
 		var cell_start_index = Global.start_indices[key];
 		
-		for i in [cell_start_index, Global.spatial_lookup.size()]:
+		## Iterate through all entries in the spatial_lookup (all particles in the cell) : Will break once it reaches a different key => we left the cell
+		for i in range(cell_start_index, Global.spatial_lookup.size()):
+			## Stop this iteration once the key changes => we left the current cell
 			if Global.spatial_lookup[i].y != key: break;
+			
+			## Get the corresponding actual index of the particle in the property arrays (like position and velocity)
 			var particle_index = Global.spatial_lookup[i].x;
+			
+			## Get the squared distance of the current particle in the cell and the origin particle to check if it is inside the "smoothing_radius"
 			var sqr_distance = (Global.positions[particle_index] - Global.positions[origin_particle_index]).length_squared();
 			
+			## If the particles are close enough => consider them for density and pressure
 			if sqr_distance <= sqr_radius:
-				update_densities();
-				update_pressures();
+				callable.bind(origin_particle_index, particle_index);
 	
 
 #region spatial_lookup
@@ -185,12 +196,17 @@ func update_spatial_lookup() -> void:
 
 #region densities
 
-func update_densities() -> void:
+func accumulate_density(origin_particle_index: int, comparer_particle_index: int) -> void:
+	var dist = (Global.positions[comparer_particle_index] - Global.positions[origin_particle_index]).length();
+	var influence = Global.smoothing_kernel(smoothing_radius, dist);
+	Global.densities[origin_particle_index] += mass * influence;
+
+func update_densities_full_iteration() -> void:
 	for i in Global.number_of_particles:
-		Global.densities[i] = calculate_density(i) * 1000;
+		Global.densities[i] = calculate_density_full_iteration(i) * 1000;
 
 ## Calculates the densitiy of particles at a specific point inside of a set radius
-func calculate_density(particle_index: int) -> float:
+func calculate_density_full_iteration(particle_index: int) -> float:
 	var density = 0.0;
 	
 	## Loop over all children that are water_drops and calculate their distance to the sample point
@@ -202,7 +218,7 @@ func calculate_density(particle_index: int) -> float:
 			density += mass * influence;
 	return density;
 
-func calculate_density_at_point(debug: bool, sample_position: Vector2) -> float:
+func calculate_density_at_point_full_iteration(debug: bool, sample_position: Vector2) -> float:
 	if Global.positions.size() == 0: return 0;
 	
 	var density = 0.0;
@@ -224,6 +240,19 @@ func calculate_density_at_point(debug: bool, sample_position: Vector2) -> float:
 
 #region pressure
 
+func accumulate_pressure(origin_particle_index: int, comparer_particle_index: int) -> void:
+	var origin_particle_position = Global.positions[origin_particle_index];
+	if comparer_particle_index == origin_particle_index: return;
+	
+	var comparer_particle_position = Global.positions[comparer_particle_index];
+	var dist = (comparer_particle_position - origin_particle_position).length();
+	var dir = get_random_direction() if dist == 0 else (comparer_particle_position - origin_particle_position) / dist;
+	var slope = Global.smoothing_kernel_derivative(smoothing_radius, dist) * 1000000;
+	var density = Global.densities[comparer_particle_position];
+	var shared_pressure = Global.calculate_shared_pressure(density, Global.densities[origin_particle_index])
+	Global.pressures[origin_particle_index] += shared_pressure * dir * slope * mass / density;
+	
+	
 func update_pressures() -> void:
 	for i in Global.number_of_particles:
 		Global.pressures[i] = calculate_pressure_force(i);
@@ -300,14 +329,40 @@ func resolve_collision() -> void:
 	
 #endregion
 
+func draw_grid() -> void:
+	for x in range(ceil(Global.bounds_rectangle.size.x / smoothing_radius)):
+		for y in range(ceil(Global.bounds_rectangle.size.y / smoothing_radius)):
+			# Calculate the top-left corner of the square
+			var grid_cell_position = Vector2(Global.bounds_rectangle.position.x + x * smoothing_radius, Global.bounds_rectangle.position.y + y * smoothing_radius)
+			
+			var square_clicked = last_mouse_click != Vector2() and last_mouse_click.x >= grid_cell_position.x and last_mouse_click.x <= grid_cell_position.x + smoothing_radius and last_mouse_click.y >= grid_cell_position.y and last_mouse_click.y <= grid_cell_position.y + smoothing_radius
+			
+			# Draw the square
+			draw_rect(Rect2(grid_cell_position, Vector2(smoothing_radius, smoothing_radius)), Color(1, 1, 1, 0.2), square_clicked)
+
+func get_sample_highlight_particles() -> Array:
+	var highlight_particle_indices = [];
+	var highlight_particles_lookup_key = Global.sample_cell_key;
+	var start_index = Global.start_indices[highlight_particles_lookup_key];
+	for i in range(start_index, Global.spatial_lookup.size()):
+		var entry = Global.spatial_lookup[i];
+		if entry.y != highlight_particles_lookup_key: break;
+		highlight_particle_indices.append(int(entry.x));
+	return highlight_particle_indices;
+
 func _on_draw() -> void:
 	draw_rect(Global.bounds_rectangle, Color.WHEAT, false, 5);
-	
+
+	if show_spatial_grid:
+		draw_grid();
+	if last_mouse_click:
+		draw_circle(last_mouse_click, smoothing_radius, Color.CYAN, false, -1.0, false);
+
+	var highligh_particle_indices = get_sample_highlight_particles();
+
 	for i in Global.number_of_particles:
-		draw_circle(Global.positions[i], particle_size, Color.SKY_BLUE, true, -1.0, true);
-		if(Global.show_pressure_direction_debug):
+		draw_circle(Global.positions[i], particle_size, Color.SKY_BLUE if !highligh_particle_indices.has(i) else Color.CRIMSON, true, -1.0, true);
+		if(show_pressure_direction_debug):
 			draw_line(Global.positions[i], Global.positions[i] + Global.pressures[i], Color.GREEN);
 			draw_line(Global.positions[i], Global.positions[i] + Global.velocities[i], Color.CORAL);
 	
-	if smoothing_radius_position:
-		draw_circle(smoothing_radius_position, smoothing_radius, Color.CYAN, false, 1.0);
