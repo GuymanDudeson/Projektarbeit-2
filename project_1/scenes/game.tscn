@@ -8,6 +8,7 @@
 script = ExtResource("1_k7qe0")
 particle_size = 8.0
 gravity = 0.0
+number_of_particles = 220
 target_density = 0.5
 pressure_multiplier = 10.0
 show_spatial_grid = true
