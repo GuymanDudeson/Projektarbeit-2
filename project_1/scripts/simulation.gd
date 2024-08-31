@@ -2,7 +2,7 @@ extends Node2D
 
 #region inputs_with_global_effect
 ## Should physics be processed for particles
-@export var simulate_physics: bool:
+@export var simulate_physics: bool = true:
 	get:
 		return simulate_physics;
 	set(value):
@@ -50,7 +50,7 @@ extends Node2D
 		target_density = value;
 		Global.target_density = value;
 		
-@export var pressure_multiplier: float = 60000:
+@export var pressure_multiplier: float = 20:
 	get:
 		return pressure_multiplier;
 	set(value):
@@ -60,6 +60,10 @@ extends Node2D
 @export var show_pressure_direction_debug: bool = false;
 @export var show_spatial_grid: bool = false;
 @export var accumulate_pressure_on_velocity: bool = true;
+
+@export var input_force: float = 2000;
+@export var apply_pressure_on_click: bool = true;
+var input_force_strength = 1;
 		
 #endregion		
 
@@ -100,7 +104,6 @@ var mass = 1;
 
 var rng = RandomNumberGenerator.new();
 
-#region Debugging	
 func _input(event):
 	if event is InputEventMouseButton and event.is_pressed():
 		calculate_density_at_point_full_iteration(true, get_global_mouse_position());
@@ -108,7 +111,6 @@ func _input(event):
 		if show_spatial_grid: 
 			Global.sample_cell_coords = HashHelpers.position_to_cell_coord(last_mouse_click, smoothing_radius);
 			Global.sample_cell_key = get_key_from_hash(HashHelpers.hash_cell(Global.sample_cell_coords.x, Global.sample_cell_coords.y))
-#endregion
 
 #region Startup
 
@@ -177,10 +179,10 @@ func _process(delta: float) -> void:
 	update_spatial_lookup();
 	
 	for i in number_of_particles:
-		foreach_point_within_radius(i, accumulate_density);
+		accumulate_density(i, get_neighboring_particles_within_radius(predicted_positions[i]));
 		
 	for i in number_of_particles:
-		foreach_point_within_radius(i, accumulate_pressure);
+		accumulate_pressure(i, get_neighboring_particles_within_radius(predicted_positions[i]));
 	
 	if simulate_physics:
 		for i in number_of_particles:
@@ -192,11 +194,20 @@ func _process(delta: float) -> void:
 				velocities[i] = pressure_acceleration * delta;	
 				
 			velocities[i] += Vector2.DOWN * gravity * delta;
+			
+		if (Input.is_mouse_button_pressed(1) or Input.is_mouse_button_pressed(2)) and apply_pressure_on_click:
+			input_force_strength = 1 if Input.is_mouse_button_pressed(1) else -1;
+			var mouse_position = get_global_mouse_position();
+			for i in get_neighboring_particles_within_radius(mouse_position):
+				var dir = (predicted_positions[i] - mouse_position).normalized();
+				velocities[i] += input_force * dir * input_force_strength * delta;
+		
+		for i in number_of_particles:
 			velocities[i] = velocities[i] * 0.95;
 		update_positions(delta);
 		resolve_collision();
 		
-	for i in density_comparisons_per_particle:
+	for i in range(density_comparisons_per_particle.size()):
 		Global.average_density_comparisons_per_particle += density_comparisons_per_particle[i];
 		Global.average_pressure_comparisons_per_particle += pressure_comparisons_per_particle[i];
 	Global.average_density_comparisons_per_particle /= number_of_particles;
@@ -204,10 +215,11 @@ func _process(delta: float) -> void:
 	
 	queue_redraw();
 
-func foreach_point_within_radius(origin_particle_index: int, callable: Callable) -> void:
+func get_neighboring_particles_within_radius(point: Vector2) -> Dictionary:
+	var neighbor_particle_indices: Dictionary = {};
 	## Takes the position-vector of the origin particle and translates it to the coordinate of a gridcell with size "smoothing_radius"
 	## This builds  a grid of "smoothing-radius" sized cells which can be addressed by an x/y cell coord 
-	var cell_of_sample = HashHelpers.position_to_cell_coord(predicted_positions[origin_particle_index], smoothing_radius);
+	var cell_of_sample = HashHelpers.position_to_cell_coord(point, smoothing_radius);
 	
 	var sqr_radius = smoothing_radius * smoothing_radius;
 	
@@ -229,13 +241,13 @@ func foreach_point_within_radius(origin_particle_index: int, callable: Callable)
 			var particle_index = spatial_lookup[i].x;
 			
 			## Get the squared distance of the current particle in the cell and the origin particle to check if it is inside the "smoothing_radius"
-			var sqr_distance = (predicted_positions[particle_index] - predicted_positions[origin_particle_index]).length_squared();
+			var sqr_distance = (predicted_positions[particle_index] - point).length_squared();
 			
 			## If the particles are close enough => consider them for density and pressure
 			if sqr_distance <= sqr_radius:
-				callable.call(origin_particle_index, particle_index);
+				neighbor_particle_indices[particle_index] = particle_index;
+	return neighbor_particle_indices;
 	
-
 #region spatial_lookup
 
 func update_spatial_lookup() -> void:
@@ -258,11 +270,12 @@ func update_spatial_lookup() -> void:
 
 #region densities
 
-func accumulate_density(origin_particle_index: int, comparer_particle_index: int) -> void:
-	density_comparisons_per_particle[origin_particle_index] += 1;
-	var dist = (predicted_positions[comparer_particle_index] - predicted_positions[origin_particle_index]).length();
-	var influence = Global.smoothing_kernel(smoothing_radius, dist);
-	densities[origin_particle_index] += mass * influence;
+func accumulate_density(origin_particle_index: int, comparer_particle_indices: Dictionary) -> void:
+	for i in comparer_particle_indices:
+		density_comparisons_per_particle[origin_particle_index] += 1;
+		var dist = (predicted_positions[i] - predicted_positions[origin_particle_index]).length();
+		var influence = Global.smoothing_kernel(smoothing_radius, dist);
+		densities[origin_particle_index] += mass * influence;
 
 #func update_densities_full_iteration() -> void:
 	#for i in number_of_particles:
@@ -296,27 +309,28 @@ func calculate_density_at_point_full_iteration(debug: bool, sample_position: Vec
 			
 	if debug: print("Density: ", density);
 	
-	Global.sample_density = density;
+	Global.sample_density = density * 100;
 	return density;
 
 #endregion
 
 #region pressure
 
-func accumulate_pressure(origin_particle_index: int, comparer_particle_index: int) -> void:
-	pressure_comparisons_per_particle[origin_particle_index] += 1;
-	var origin_particle_position = predicted_positions[origin_particle_index];
-	if comparer_particle_index == origin_particle_index: return;
-	
-	var comparer_particle_position = predicted_positions[comparer_particle_index];
-	var dist = (comparer_particle_position - origin_particle_position).length();
-	var dir = get_random_direction() if dist == 0 else (comparer_particle_position - origin_particle_position) / dist;
-	var slope = Global.smoothing_kernel_derivative(smoothing_radius, dist);
-	var density = densities[comparer_particle_index];
-	if is_equal_approx(density, 0):
-		return;
-	var shared_pressure = Global.calculate_shared_pressure(density, densities[origin_particle_index])
-	pressures[origin_particle_index] += shared_pressure * -dir * slope * mass / density;
+func accumulate_pressure(origin_particle_index: int, comparer_particle_indices: Dictionary) -> void:
+	for i in comparer_particle_indices:
+		pressure_comparisons_per_particle[origin_particle_index] += 1;
+		var origin_particle_position = predicted_positions[origin_particle_index];
+		if i == origin_particle_index: continue;
+		
+		var comparer_particle_position = predicted_positions[i];
+		var dist = (comparer_particle_position - origin_particle_position).length();
+		var dir = get_random_direction() if dist == 0 else (comparer_particle_position - origin_particle_position) / dist;
+		var slope = Global.smoothing_kernel_derivative(smoothing_radius, dist);
+		var density = densities[i];
+		if is_equal_approx(density, 0):
+			continue;
+		var shared_pressure = Global.calculate_shared_pressure(density, densities[origin_particle_index])
+		pressures[origin_particle_index] += shared_pressure * dir * slope * mass / density;
 	
 	
 #func update_pressures() -> void:
@@ -425,4 +439,3 @@ func _on_draw() -> void:
 		if(show_pressure_direction_debug):
 			draw_line(positions[i], positions[i] + pressures[i], Color.GREEN);
 			draw_line(positions[i], positions[i] + velocities[i], Color.CORAL);
-	

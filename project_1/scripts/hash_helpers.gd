@@ -12,7 +12,7 @@ var cell_offsets = [
 	Vector2i(1, -1),
 ]
 
-func position_to_cell_coord(point: Vector2i, radius: float) -> Vector2i:
+func position_to_cell_coord(point: Vector2i, radius: float) -> Vector2:
 	var cell_x: int = floor(point.x / radius);
 	var cell_y: int = floor(point.y / radius);
 	return Vector2(cell_x, cell_y);

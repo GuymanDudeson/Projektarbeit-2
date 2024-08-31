@@ -17,7 +17,7 @@ var average_pressure_comparisons_per_particle: float;
 
 ## Converts a given density at a point to the pressure that should be applied to the particle to move it towards the target density
 func convert_density_to_pressure(density: float) -> float:
-	var density_error = density - target_density;
+	var density_error = density - target_density / 100;
 	var pressure = density_error * pressure_multiplier;
 	return pressure;
 	
@@ -31,7 +31,7 @@ func smoothing_kernel(radius: float, dist: float) -> float:
 	
 	## Volume calculation formular for the volume of the smoothing function as given by Wolfram Alpha
 	var volume = PI * pow(radius, 4) / 6;
-	return ((radius - dist) * (radius - dist) * (radius - dist) / volume);
+	return ((radius - dist) * (radius - dist) / volume) * 1000;
 
 func smoothing_kernel_derivative(radius: float, dist: float) -> float:
 	## Particle is outside of the smoothing radius => Influence of this point will be 0
@@ -39,5 +39,5 @@ func smoothing_kernel_derivative(radius: float, dist: float) -> float:
 	
 	## Derivative of the smoothing function as given by Wolfram Alpha
 	var scale = 12 / (PI * pow(radius, 4));
-	return scale * (dist - radius);
+	return scale * (dist - radius) * 5000000;
 	
