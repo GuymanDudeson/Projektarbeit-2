@@ -75,6 +75,7 @@ update_on_text_changed = true
 script = ExtResource("7_tht2h")
 
 [node name="Label" type="Label" parent="User Inputs/Spin Boxes/Gravity"]
+layout_mode = 0
 offset_left = -106.0
 offset_top = -8.0
 offset_right = -12.0
@@ -92,6 +93,7 @@ update_on_text_changed = true
 script = ExtResource("7_tht2h")
 
 [node name="Label" type="Label" parent="User Inputs/Spin Boxes/Target Density"]
+layout_mode = 0
 offset_left = -192.0
 offset_top = -4.0
 offset_right = -10.0
@@ -109,6 +111,7 @@ update_on_text_changed = true
 script = ExtResource("7_tht2h")
 
 [node name="Label" type="Label" parent="User Inputs/Spin Boxes/Pressure Multiplier"]
+layout_mode = 0
 offset_left = -248.0
 offset_top = -4.0
 offset_right = -11.0
@@ -126,6 +129,7 @@ update_on_text_changed = true
 script = ExtResource("7_tht2h")
 
 [node name="Label" type="Label" parent="User Inputs/Spin Boxes/Input Force"]
+layout_mode = 0
 offset_left = -152.0
 offset_top = -4.0
 offset_right = -8.0
@@ -143,6 +147,7 @@ update_on_text_changed = true
 script = ExtResource("7_tht2h")
 
 [node name="Label" type="Label" parent="User Inputs/Spin Boxes/Smoothing Radius"]
+layout_mode = 0
 offset_left = -232.0
 offset_top = -4.0
 offset_right = -7.0
@@ -216,10 +221,10 @@ offset_bottom = 27.0
 theme_override_font_sizes/font_size = 25
 text = "Apply Input Force:"
 
-[node name="Label" type="Label" parent="."]
-offset_left = -1248.0
+[node name="Tutorial" type="Label" parent="."]
+offset_left = -1256.0
 offset_top = -424.0
-offset_right = -861.0
+offset_right = -869.0
 offset_bottom = -349.0
 text = "When \"Apply Input Force\" is enabled:
 Left-Click -> Drag to push particles away
