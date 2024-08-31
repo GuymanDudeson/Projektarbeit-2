@@ -172,7 +172,7 @@ func _process(delta: float) -> void:
 	Global.average_pressure_comparisons_per_particle = 0;
 	
 	for i in number_of_particles:
-		predicted_positions[i] = positions[i] + velocities[i] * (1 / 120);
+		predicted_positions[i] = positions[i] + velocities[i] * (1.0 / 60.0);
 	
 	update_spatial_lookup();
 	
@@ -207,7 +207,7 @@ func _process(delta: float) -> void:
 func foreach_point_within_radius(origin_particle_index: int, callable: Callable) -> void:
 	## Takes the position-vector of the origin particle and translates it to the coordinate of a gridcell with size "smoothing_radius"
 	## This builds  a grid of "smoothing-radius" sized cells which can be addressed by an x/y cell coord 
-	var cell_of_sample = HashHelpers.position_to_cell_coord(positions[origin_particle_index], smoothing_radius);
+	var cell_of_sample = HashHelpers.position_to_cell_coord(predicted_positions[origin_particle_index], smoothing_radius);
 	
 	var sqr_radius = smoothing_radius * smoothing_radius;
 	
@@ -229,7 +229,7 @@ func foreach_point_within_radius(origin_particle_index: int, callable: Callable)
 			var particle_index = spatial_lookup[i].x;
 			
 			## Get the squared distance of the current particle in the cell and the origin particle to check if it is inside the "smoothing_radius"
-			var sqr_distance = (positions[particle_index] - positions[origin_particle_index]).length_squared();
+			var sqr_distance = (predicted_positions[particle_index] - predicted_positions[origin_particle_index]).length_squared();
 			
 			## If the particles are close enough => consider them for density and pressure
 			if sqr_distance <= sqr_radius:
@@ -240,7 +240,7 @@ func foreach_point_within_radius(origin_particle_index: int, callable: Callable)
 
 func update_spatial_lookup() -> void:
 	for i in number_of_particles:
-		var cell = HashHelpers.position_to_cell_coord(positions[i], smoothing_radius);
+		var cell = HashHelpers.position_to_cell_coord(predicted_positions[i], smoothing_radius);
 		var cell_key = get_key_from_hash(HashHelpers.hash_cell(cell.x, cell.y))
 		spatial_lookup[i] = Vector2(i, cell_key);
 		start_indices[i] = 9223372036854775807;
@@ -260,7 +260,7 @@ func update_spatial_lookup() -> void:
 
 func accumulate_density(origin_particle_index: int, comparer_particle_index: int) -> void:
 	density_comparisons_per_particle[origin_particle_index] += 1;
-	var dist = (positions[comparer_particle_index] - positions[origin_particle_index]).length();
+	var dist = (predicted_positions[comparer_particle_index] - predicted_positions[origin_particle_index]).length();
 	var influence = Global.smoothing_kernel(smoothing_radius, dist);
 	densities[origin_particle_index] += mass * influence;
 
@@ -305,10 +305,10 @@ func calculate_density_at_point_full_iteration(debug: bool, sample_position: Vec
 
 func accumulate_pressure(origin_particle_index: int, comparer_particle_index: int) -> void:
 	pressure_comparisons_per_particle[origin_particle_index] += 1;
-	var origin_particle_position = positions[origin_particle_index];
+	var origin_particle_position = predicted_positions[origin_particle_index];
 	if comparer_particle_index == origin_particle_index: return;
 	
-	var comparer_particle_position = positions[comparer_particle_index];
+	var comparer_particle_position = predicted_positions[comparer_particle_index];
 	var dist = (comparer_particle_position - origin_particle_position).length();
 	var dir = get_random_direction() if dist == 0 else (comparer_particle_position - origin_particle_position) / dist;
 	var slope = Global.smoothing_kernel_derivative(smoothing_radius, dist);
