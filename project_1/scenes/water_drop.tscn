@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://e40qklfb5tqq"]
+[gd_scene load_steps=6 format=3 uid="uid://bpl7dhl6tixls"]
 
 [ext_resource type="Shader" path="res://shaders/circle.gdshader" id="1_mcy8g"]
 
