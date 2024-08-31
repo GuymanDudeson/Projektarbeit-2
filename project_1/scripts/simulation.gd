@@ -16,7 +16,7 @@ extends Node2D
 		collision_damping = value;
 
 ## Bounding rectangle defining where particles can go; where the limits are
-@export var bounds_size : Vector2 = Vector2(1800, 1100):
+@export var bounds_size : Vector2 = Vector2(1600, 1100):
 	get:
 		return bounds_size;
 	set(value):

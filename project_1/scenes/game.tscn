@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://cg67cntaunmm6"]
+[gd_scene load_steps=9 format=3 uid="uid://cg67cntaunmm6"]
 
 [ext_resource type="Script" path="res://scripts/simulation.gd" id="1_k7qe0"]
 [ext_resource type="Script" path="res://scripts/density_label.gd" id="2_spxrk"]
@@ -6,10 +6,12 @@
 [ext_resource type="Script" path="res://scripts/fps.gd" id="4_ehtha"]
 [ext_resource type="Script" path="res://scripts/avg_pressure_label.gd" id="5_gntgo"]
 [ext_resource type="Script" path="res://scripts/avg_density_label.gd" id="5_i652e"]
-[ext_resource type="Script" path="res://scenes/user_input.gd" id="7_1d6yv"]
+[ext_resource type="Script" path="res://scripts/user_input.gd" id="7_tht2h"]
+[ext_resource type="Script" path="res://scripts/user_input_bool.gd" id="8_vya0f"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_k7qe0")
+number_of_particles = 300
 
 [node name="Camera2D" type="Camera2D" parent="."]
 
@@ -59,14 +61,191 @@ theme_override_font_sizes/font_size = 30
 text = "Avg. Density per particle:"
 script = ExtResource("5_i652e")
 
-[node name="LineEdit" type="LineEdit" parent="."]
-visible = false
-offset_right = 67.0625
+[node name="User Inputs" type="Node" parent="."]
+
+[node name="Spin Boxes" type="Node" parent="User Inputs"]
+
+[node name="Gravity" type="SpinBox" parent="User Inputs/Spin Boxes"]
+offset_left = 1096.0
+offset_top = -544.0
+offset_right = 1179.06
+offset_bottom = -513.0
+max_value = 1e+06
+update_on_text_changed = true
+script = ExtResource("7_tht2h")
+
+[node name="Label" type="Label" parent="User Inputs/Spin Boxes/Gravity"]
+offset_left = -106.0
+offset_top = -8.0
+offset_right = -12.0
+offset_bottom = 27.0
+theme_override_font_sizes/font_size = 25
+text = "Gravity:"
+
+[node name="Target Density" type="SpinBox" parent="User Inputs/Spin Boxes"]
+offset_left = 1096.0
+offset_top = -480.0
+offset_right = 1179.06
+offset_bottom = -449.0
+max_value = 1e+06
+update_on_text_changed = true
+script = ExtResource("7_tht2h")
+
+[node name="Label" type="Label" parent="User Inputs/Spin Boxes/Target Density"]
+offset_left = -192.0
+offset_top = -4.0
+offset_right = -10.0
 offset_bottom = 31.0
-text = "Gravity"
-placeholder_text = "0"
-script = ExtResource("7_1d6yv")
+theme_override_font_sizes/font_size = 25
+text = "Target Density:"
+
+[node name="Pressure Multiplier" type="SpinBox" parent="User Inputs/Spin Boxes"]
+offset_left = 1096.0
+offset_top = -416.0
+offset_right = 1179.06
+offset_bottom = -385.0
+max_value = 1e+06
+update_on_text_changed = true
+script = ExtResource("7_tht2h")
+
+[node name="Label" type="Label" parent="User Inputs/Spin Boxes/Pressure Multiplier"]
+offset_left = -248.0
+offset_top = -4.0
+offset_right = -11.0
+offset_bottom = 31.0
+theme_override_font_sizes/font_size = 25
+text = "Pressure Multiplier:"
+
+[node name="Input Force" type="SpinBox" parent="User Inputs/Spin Boxes"]
+offset_left = 1096.0
+offset_top = -352.0
+offset_right = 1179.06
+offset_bottom = -321.0
+max_value = 1e+06
+update_on_text_changed = true
+script = ExtResource("7_tht2h")
+
+[node name="Label" type="Label" parent="User Inputs/Spin Boxes/Input Force"]
+offset_left = -152.0
+offset_top = -4.0
+offset_right = -8.0
+offset_bottom = 31.0
+theme_override_font_sizes/font_size = 25
+text = "Input Force:"
+
+[node name="Smoothing Radius" type="SpinBox" parent="User Inputs/Spin Boxes"]
+offset_left = 1096.0
+offset_top = -288.0
+offset_right = 1179.06
+offset_bottom = -257.0
+max_value = 1e+06
+update_on_text_changed = true
+script = ExtResource("7_tht2h")
+
+[node name="Label" type="Label" parent="User Inputs/Spin Boxes/Smoothing Radius"]
+offset_left = -232.0
+offset_top = -4.0
+offset_right = -7.0
+offset_bottom = 31.0
+theme_override_font_sizes/font_size = 25
+text = "Smoothing Radius:"
+
+[node name="Toggles" type="Node" parent="User Inputs"]
+
+[node name="Show Pressure" type="CheckButton" parent="User Inputs/Toggles"]
+offset_left = 1104.0
+offset_top = -232.0
+offset_right = 1148.0
+offset_bottom = -208.0
+script = ExtResource("8_vya0f")
+
+[node name="Label" type="Label" parent="User Inputs/Toggles/Show Pressure"]
+layout_mode = 0
+offset_left = -200.0
+offset_top = -8.0
+offset_right = -15.0
+offset_bottom = 27.0
+theme_override_font_sizes/font_size = 25
+text = "Show Pressure:"
+
+[node name="Show Grid" type="CheckButton" parent="User Inputs/Toggles"]
+offset_left = 1104.0
+offset_top = -192.0
+offset_right = 1148.0
+offset_bottom = -168.0
+script = ExtResource("8_vya0f")
+
+[node name="Label" type="Label" parent="User Inputs/Toggles/Show Grid"]
+layout_mode = 0
+offset_left = -144.0
+offset_top = -8.0
+offset_right = 41.0
+offset_bottom = 27.0
+theme_override_font_sizes/font_size = 25
+text = "Show Grid:"
+
+[node name="Accumulate Velocity" type="CheckButton" parent="User Inputs/Toggles"]
+offset_left = 1104.0
+offset_top = -152.0
+offset_right = 1148.0
+offset_bottom = -128.0
+script = ExtResource("8_vya0f")
+
+[node name="Label" type="Label" parent="User Inputs/Toggles/Accumulate Velocity"]
+layout_mode = 0
+offset_left = -264.0
+offset_top = -8.0
+offset_right = -13.0
+offset_bottom = 27.0
+theme_override_font_sizes/font_size = 25
+text = "Accumulate Velocity:"
+
+[node name="Apply Input Force" type="CheckButton" parent="User Inputs/Toggles"]
+offset_left = 1104.0
+offset_top = -112.0
+offset_right = 1148.0
+offset_bottom = -88.0
+script = ExtResource("8_vya0f")
+
+[node name="Label" type="Label" parent="User Inputs/Toggles/Apply Input Force"]
+layout_mode = 0
+offset_left = -232.0
+offset_top = -8.0
+offset_right = -13.0
+offset_bottom = 27.0
+theme_override_font_sizes/font_size = 25
+text = "Apply Input Force:"
+
+[node name="Label" type="Label" parent="."]
+offset_left = -1248.0
+offset_top = -424.0
+offset_right = -861.0
+offset_bottom = -349.0
+text = "When \"Apply Input Force\" is enabled:
+Left-Click -> Drag to push particles away
+Right-Click -> Pull Particles toward mouse position"
 
 [connection signal="draw" from="." to="." method="_on_draw"]
 [connection signal="ready" from="." to="." method="_on_ready"]
-[connection signal="text_submitted" from="LineEdit" to="." method="_on_line_edit_text_submitted"]
+[connection signal="changed" from="User Inputs/Spin Boxes/Gravity" to="User Inputs/Spin Boxes/Gravity" method="_on_changed"]
+[connection signal="ready" from="User Inputs/Spin Boxes/Gravity" to="User Inputs/Spin Boxes/Gravity" method="_on_ready"]
+[connection signal="value_changed" from="User Inputs/Spin Boxes/Gravity" to="User Inputs/Spin Boxes/Gravity" method="_on_value_changed"]
+[connection signal="changed" from="User Inputs/Spin Boxes/Target Density" to="User Inputs/Spin Boxes/Target Density" method="_on_changed"]
+[connection signal="ready" from="User Inputs/Spin Boxes/Target Density" to="User Inputs/Spin Boxes/Target Density" method="_on_ready"]
+[connection signal="value_changed" from="User Inputs/Spin Boxes/Target Density" to="User Inputs/Spin Boxes/Target Density" method="_on_value_changed"]
+[connection signal="changed" from="User Inputs/Spin Boxes/Pressure Multiplier" to="User Inputs/Spin Boxes/Pressure Multiplier" method="_on_changed"]
+[connection signal="ready" from="User Inputs/Spin Boxes/Pressure Multiplier" to="User Inputs/Spin Boxes/Pressure Multiplier" method="_on_ready"]
+[connection signal="value_changed" from="User Inputs/Spin Boxes/Pressure Multiplier" to="User Inputs/Spin Boxes/Pressure Multiplier" method="_on_value_changed"]
+[connection signal="changed" from="User Inputs/Spin Boxes/Input Force" to="User Inputs/Spin Boxes/Input Force" method="_on_changed"]
+[connection signal="ready" from="User Inputs/Spin Boxes/Input Force" to="User Inputs/Spin Boxes/Input Force" method="_on_ready"]
+[connection signal="value_changed" from="User Inputs/Spin Boxes/Input Force" to="User Inputs/Spin Boxes/Input Force" method="_on_value_changed"]
+[connection signal="ready" from="User Inputs/Spin Boxes/Smoothing Radius" to="User Inputs/Spin Boxes/Smoothing Radius" method="_on_ready"]
+[connection signal="value_changed" from="User Inputs/Spin Boxes/Smoothing Radius" to="User Inputs/Spin Boxes/Smoothing Radius" method="_on_value_changed"]
+[connection signal="ready" from="User Inputs/Toggles/Show Pressure" to="User Inputs/Toggles/Show Pressure" method="_on_ready"]
+[connection signal="toggled" from="User Inputs/Toggles/Show Pressure" to="User Inputs/Toggles/Show Pressure" method="_on_toggled"]
+[connection signal="ready" from="User Inputs/Toggles/Show Grid" to="User Inputs/Toggles/Show Grid" method="_on_ready"]
+[connection signal="toggled" from="User Inputs/Toggles/Show Grid" to="User Inputs/Toggles/Show Grid" method="_on_toggled"]
+[connection signal="ready" from="User Inputs/Toggles/Accumulate Velocity" to="User Inputs/Toggles/Accumulate Velocity" method="_on_ready"]
+[connection signal="toggled" from="User Inputs/Toggles/Accumulate Velocity" to="User Inputs/Toggles/Accumulate Velocity" method="_on_toggled"]
+[connection signal="ready" from="User Inputs/Toggles/Apply Input Force" to="User Inputs/Toggles/Apply Input Force" method="_on_ready"]
+[connection signal="toggled" from="User Inputs/Toggles/Apply Input Force" to="User Inputs/Toggles/Apply Input Force" method="_on_toggled"]
