@@ -80,6 +80,9 @@ var spatial_lookup: Array;
 ## => If we want to get all particles in cell 1 we get the entry in start_indeces at index 1 => 2
 ## The particles in cell 1 start in the Spatial_Lookup at index 2
 var start_indices: Array;
+
+var density_comparisons_per_particle: Array;
+var pressure_comparisons_per_particle: Array;
 	
 @export var smoothing_radius: float = 120:
 	get:
@@ -136,6 +139,12 @@ func _ready() -> void:
 	densities.resize(number_of_particles);
 	densities.fill(1.0);
 	
+	density_comparisons_per_particle.resize(number_of_particles);
+	density_comparisons_per_particle.fill(0);
+	
+	pressure_comparisons_per_particle.resize(number_of_particles);
+	pressure_comparisons_per_particle.fill(0);
+	
 	#endregion
 	spawn_particles_as_grid();
 
@@ -157,6 +166,10 @@ func _process(delta: float) -> void:
 	## Reset the densities and pressures to start accumulating again
 	densities.fill(0.0);
 	pressures.fill(Vector2());
+	density_comparisons_per_particle.fill(0);
+	pressure_comparisons_per_particle.fill(0);
+	Global.average_density_comparisons_per_particle = 0;
+	Global.average_pressure_comparisons_per_particle = 0;
 	
 	for i in number_of_particles:
 		predicted_positions[i] = positions[i] + velocities[i] * (1 / 120);
@@ -183,6 +196,12 @@ func _process(delta: float) -> void:
 		update_positions(delta);
 		resolve_collision();
 		
+	for i in density_comparisons_per_particle:
+		Global.average_density_comparisons_per_particle += density_comparisons_per_particle[i];
+		Global.average_pressure_comparisons_per_particle += pressure_comparisons_per_particle[i];
+	Global.average_density_comparisons_per_particle /= number_of_particles;
+	Global.average_pressure_comparisons_per_particle /= number_of_particles;
+	
 	queue_redraw();
 
 func foreach_point_within_radius(origin_particle_index: int, callable: Callable) -> void:
@@ -240,6 +259,7 @@ func update_spatial_lookup() -> void:
 #region densities
 
 func accumulate_density(origin_particle_index: int, comparer_particle_index: int) -> void:
+	density_comparisons_per_particle[origin_particle_index] += 1;
 	var dist = (positions[comparer_particle_index] - positions[origin_particle_index]).length();
 	var influence = Global.smoothing_kernel(smoothing_radius, dist);
 	densities[origin_particle_index] += mass * influence;
@@ -284,6 +304,7 @@ func calculate_density_at_point_full_iteration(debug: bool, sample_position: Vec
 #region pressure
 
 func accumulate_pressure(origin_particle_index: int, comparer_particle_index: int) -> void:
+	pressure_comparisons_per_particle[origin_particle_index] += 1;
 	var origin_particle_position = positions[origin_particle_index];
 	if comparer_particle_index == origin_particle_index: return;
 	

@@ -12,6 +12,8 @@ var pressure_multiplier: float;
 var sample_density: float;
 var sample_cell_coords: Vector2i;
 var sample_cell_key: int;
+var average_density_comparisons_per_particle: float;
+var average_pressure_comparisons_per_particle: float;
 
 ## Converts a given density at a point to the pressure that should be applied to the particle to move it towards the target density
 func convert_density_to_pressure(density: float) -> float:

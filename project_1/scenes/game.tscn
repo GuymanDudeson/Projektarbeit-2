@@ -1,43 +1,61 @@
-[gd_scene load_steps=5 format=3 uid="uid://cg67cntaunmm6"]
+[gd_scene load_steps=7 format=3 uid="uid://cg67cntaunmm6"]
 
 [ext_resource type="Script" path="res://scripts/simulation.gd" id="1_k7qe0"]
 [ext_resource type="Script" path="res://scripts/density_label.gd" id="2_spxrk"]
 [ext_resource type="Script" path="res://scripts/cell_key_label.gd" id="3_qgg2x"]
 [ext_resource type="Script" path="res://scripts/fps.gd" id="4_ehtha"]
+[ext_resource type="Script" path="res://scripts/avg_pressure_label.gd" id="5_gntgo"]
+[ext_resource type="Script" path="res://scripts/avg_density_label.gd" id="5_i652e"]
 
 [node name="Game" type="Node2D"]
 script = ExtResource("1_k7qe0")
 simulate_physics = true
-smoothing_radius = 100.0
 
 [node name="Camera2D" type="Camera2D" parent="."]
 
 [node name="Density_Label" type="Label" parent="."]
-offset_left = 760.0
-offset_top = -614.0
-offset_right = 981.0
-offset_bottom = -545.0
+offset_top = -599.0
+offset_right = 221.0
+offset_bottom = -530.0
 theme_override_font_sizes/font_size = 30
 text = "Density: "
 script = ExtResource("2_spxrk")
 
 [node name="Cellkey_Label" type="Label" parent="."]
-offset_left = 931.0
-offset_top = -487.0
-offset_right = 1160.0
-offset_bottom = -418.0
+offset_left = -899.0
+offset_top = -597.0
+offset_right = -756.0
+offset_bottom = -543.0
 theme_override_font_sizes/font_size = 30
 text = "Cell Key:  "
 script = ExtResource("3_qgg2x")
 
 [node name="FPS_Label" type="Label" parent="."]
-offset_left = 932.0
-offset_top = -544.0
-offset_right = 1150.0
-offset_bottom = -470.0
+offset_left = -900.0
+offset_top = -631.0
+offset_right = -825.0
+offset_bottom = -589.0
 theme_override_font_sizes/font_size = 30
 text = "FPS:  "
 script = ExtResource("4_ehtha")
+
+[node name="avg_pressure" type="Label" parent="."]
+offset_left = -680.0
+offset_top = -597.0
+offset_right = -286.0
+offset_bottom = -523.0
+theme_override_font_sizes/font_size = 30
+text = "Avg. Pressure per particle:  "
+script = ExtResource("5_gntgo")
+
+[node name="avg_density" type="Label" parent="."]
+offset_left = -663.0
+offset_top = -634.0
+offset_right = -285.0
+offset_bottom = -578.0
+theme_override_font_sizes/font_size = 30
+text = "Avg. Density per particle:"
+script = ExtResource("5_i652e")
 
 [connection signal="draw" from="." to="." method="_on_draw"]
 [connection signal="ready" from="." to="." method="_on_ready"]
