@@ -13,8 +13,8 @@ var cell_offsets = [
 ]
 
 func position_to_cell_coord(point: Vector2i, radius: float) -> Vector2i:
-	var cell_x: int = ceil(point.x / radius);
-	var cell_y: int = ceil(point.y / radius);
+	var cell_x: int = floor(point.x / radius);
+	var cell_y: int = floor(point.y / radius);
 	return Vector2(cell_x, cell_y);
 
 ## Calculate a Hash that is unlikely to repeat itself

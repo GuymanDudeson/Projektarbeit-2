@@ -16,14 +16,14 @@ extends Node2D
 		collision_damping = value;
 
 ## Bounding rectangle defining where particles can go; where the limits are
-@export var bounds_size : Vector2 = Vector2(3500, 2500):
+@export var bounds_size : Vector2 = Vector2(1800, 1100):
 	get:
 		return bounds_size;
 	set(value):
 		bounds_size = value;
 		bounds_rectangle = Rect2(Vector2(position.x - bounds_size.x / 2, position.y - bounds_size.y / 2), Vector2(bounds_size.x, bounds_size.y));
 		
-@export var particle_size : float = 15:
+@export var particle_size : float = 6:
 	get:
 		return particle_size;
 	set(value):
@@ -37,20 +37,20 @@ extends Node2D
 		gravity = value;
 		
 ## The total number of particles in the scene
-@export var number_of_particles: int = 350:
+@export var number_of_particles: int = 450:
 	get:
 		return number_of_particles;
 	set(value):
 		number_of_particles = value;
 		
-@export var target_density: float = 8:
+@export var target_density: float = 20:
 	get:
 		return target_density;
 	set(value):
 		target_density = value;
 		Global.target_density = value;
 		
-@export var pressure_multiplier: float = 150:
+@export var pressure_multiplier: float = 60000:
 	get:
 		return pressure_multiplier;
 	set(value):
@@ -59,7 +59,7 @@ extends Node2D
 		
 @export var show_pressure_direction_debug: bool = false;
 @export var show_spatial_grid: bool = false;
-@export var accumulate_pressure_on_velocity: bool = false;
+@export var accumulate_pressure_on_velocity: bool = true;
 		
 #endregion		
 
@@ -81,7 +81,7 @@ var spatial_lookup: Array;
 ## The particles in cell 1 start in the Spatial_Lookup at index 2
 var start_indices: Array;
 	
-@export var smoothing_radius: float = 200:
+@export var smoothing_radius: float = 120:
 	get:
 		return smoothing_radius;
 	set(value):
@@ -90,7 +90,7 @@ var start_indices: Array;
 		
 var bounds_rectangle: Rect2;
 		
-@export var particle_spacing: int = 100;
+@export var particle_spacing: int = 30;
 
 var last_mouse_click: Vector2;
 var mass = 1;
@@ -188,7 +188,7 @@ func _process(delta: float) -> void:
 func foreach_point_within_radius(origin_particle_index: int, callable: Callable) -> void:
 	## Takes the position-vector of the origin particle and translates it to the coordinate of a gridcell with size "smoothing_radius"
 	## This builds  a grid of "smoothing-radius" sized cells which can be addressed by an x/y cell coord 
-	var cell_of_sample = HashHelpers.position_to_cell_coord(predicted_positions[origin_particle_index], smoothing_radius);
+	var cell_of_sample = HashHelpers.position_to_cell_coord(positions[origin_particle_index], smoothing_radius);
 	
 	var sqr_radius = smoothing_radius * smoothing_radius;
 	
@@ -210,7 +210,7 @@ func foreach_point_within_radius(origin_particle_index: int, callable: Callable)
 			var particle_index = spatial_lookup[i].x;
 			
 			## Get the squared distance of the current particle in the cell and the origin particle to check if it is inside the "smoothing_radius"
-			var sqr_distance = (predicted_positions[particle_index] - predicted_positions[origin_particle_index]).length_squared();
+			var sqr_distance = (positions[particle_index] - positions[origin_particle_index]).length_squared();
 			
 			## If the particles are close enough => consider them for density and pressure
 			if sqr_distance <= sqr_radius:
@@ -221,7 +221,7 @@ func foreach_point_within_radius(origin_particle_index: int, callable: Callable)
 
 func update_spatial_lookup() -> void:
 	for i in number_of_particles:
-		var cell = HashHelpers.position_to_cell_coord(predicted_positions[i], smoothing_radius);
+		var cell = HashHelpers.position_to_cell_coord(positions[i], smoothing_radius);
 		var cell_key = get_key_from_hash(HashHelpers.hash_cell(cell.x, cell.y))
 		spatial_lookup[i] = Vector2(i, cell_key);
 		start_indices[i] = 9223372036854775807;
@@ -240,7 +240,7 @@ func update_spatial_lookup() -> void:
 #region densities
 
 func accumulate_density(origin_particle_index: int, comparer_particle_index: int) -> void:
-	var dist = (predicted_positions[comparer_particle_index] - predicted_positions[origin_particle_index]).length();
+	var dist = (positions[comparer_particle_index] - positions[origin_particle_index]).length();
 	var influence = Global.smoothing_kernel(smoothing_radius, dist);
 	densities[origin_particle_index] += mass * influence;
 
@@ -284,10 +284,10 @@ func calculate_density_at_point_full_iteration(debug: bool, sample_position: Vec
 #region pressure
 
 func accumulate_pressure(origin_particle_index: int, comparer_particle_index: int) -> void:
-	var origin_particle_position = predicted_positions[origin_particle_index];
+	var origin_particle_position = positions[origin_particle_index];
 	if comparer_particle_index == origin_particle_index: return;
 	
-	var comparer_particle_position = predicted_positions[comparer_particle_index];
+	var comparer_particle_position = positions[comparer_particle_index];
 	var dist = (comparer_particle_position - origin_particle_position).length();
 	var dir = get_random_direction() if dist == 0 else (comparer_particle_position - origin_particle_position) / dist;
 	var slope = Global.smoothing_kernel_derivative(smoothing_radius, dist);
@@ -360,10 +360,14 @@ func resolve_collision() -> void:
 #endregion
 
 func draw_grid() -> void:
-	for x in range(ceil(bounds_rectangle.size.x / smoothing_radius)):
-		for y in range(ceil(bounds_rectangle.size.y / smoothing_radius)):
+	var x_division = ceil(bounds_rectangle.size.x / smoothing_radius) * 2;
+	var y_division = ceil(bounds_rectangle.size.y / smoothing_radius) * 2;
+	
+	for x in range(x_division):
+		for y in range(y_division):
+			
 			# Calculate the top-left corner of the square
-			var grid_cell_position = Vector2(bounds_rectangle.position.x + x * smoothing_radius, bounds_rectangle.position.y + y * smoothing_radius)
+			var grid_cell_position = Vector2((-smoothing_radius * ceil(x_division / 2)) + x * smoothing_radius, (-smoothing_radius * ceil(y_division / 2)) + y * smoothing_radius);
 			
 			var square_clicked = last_mouse_click != Vector2() and last_mouse_click.x >= grid_cell_position.x and last_mouse_click.x <= grid_cell_position.x + smoothing_radius and last_mouse_click.y >= grid_cell_position.y and last_mouse_click.y <= grid_cell_position.y + smoothing_radius
 			
