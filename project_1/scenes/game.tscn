@@ -159,9 +159,9 @@ text = "Smoothing Radius:"
 
 [node name="Show Pressure" type="CheckButton" parent="User Inputs/Toggles"]
 offset_left = 1104.0
-offset_top = -232.0
+offset_top = -192.0
 offset_right = 1148.0
-offset_bottom = -208.0
+offset_bottom = -168.0
 script = ExtResource("8_vya0f")
 
 [node name="Label" type="Label" parent="User Inputs/Toggles/Show Pressure"]
@@ -175,9 +175,9 @@ text = "Show Pressure:"
 
 [node name="Show Grid" type="CheckButton" parent="User Inputs/Toggles"]
 offset_left = 1104.0
-offset_top = -192.0
+offset_top = -152.0
 offset_right = 1148.0
-offset_bottom = -168.0
+offset_bottom = -128.0
 script = ExtResource("8_vya0f")
 
 [node name="Label" type="Label" parent="User Inputs/Toggles/Show Grid"]
@@ -191,9 +191,9 @@ text = "Show Grid:"
 
 [node name="Accumulate Velocity" type="CheckButton" parent="User Inputs/Toggles"]
 offset_left = 1104.0
-offset_top = -152.0
+offset_top = -112.0
 offset_right = 1148.0
-offset_bottom = -128.0
+offset_bottom = -88.0
 script = ExtResource("8_vya0f")
 
 [node name="Label" type="Label" parent="User Inputs/Toggles/Accumulate Velocity"]
@@ -207,9 +207,9 @@ text = "Accumulate Velocity:"
 
 [node name="Apply Input Force" type="CheckButton" parent="User Inputs/Toggles"]
 offset_left = 1104.0
-offset_top = -112.0
+offset_top = -72.0
 offset_right = 1148.0
-offset_bottom = -88.0
+offset_bottom = -48.0
 script = ExtResource("8_vya0f")
 
 [node name="Label" type="Label" parent="User Inputs/Toggles/Apply Input Force"]
@@ -220,6 +220,22 @@ offset_right = -13.0
 offset_bottom = 27.0
 theme_override_font_sizes/font_size = 25
 text = "Apply Input Force:"
+
+[node name="Update Positions" type="CheckButton" parent="User Inputs/Toggles"]
+offset_left = 1104.0
+offset_top = -232.0
+offset_right = 1148.0
+offset_bottom = -208.0
+script = ExtResource("8_vya0f")
+
+[node name="Label" type="Label" parent="User Inputs/Toggles/Update Positions"]
+layout_mode = 0
+offset_left = -232.0
+offset_top = -8.0
+offset_right = -13.0
+offset_bottom = 27.0
+theme_override_font_sizes/font_size = 25
+text = "Update Positions:"
 
 [node name="Tutorial" type="Label" parent="."]
 offset_left = -1256.0
@@ -254,3 +270,5 @@ Right-Click -> Pull Particles toward mouse position"
 [connection signal="toggled" from="User Inputs/Toggles/Accumulate Velocity" to="User Inputs/Toggles/Accumulate Velocity" method="_on_toggled"]
 [connection signal="ready" from="User Inputs/Toggles/Apply Input Force" to="User Inputs/Toggles/Apply Input Force" method="_on_ready"]
 [connection signal="toggled" from="User Inputs/Toggles/Apply Input Force" to="User Inputs/Toggles/Apply Input Force" method="_on_toggled"]
+[connection signal="ready" from="User Inputs/Toggles/Update Positions" to="User Inputs/Toggles/Update Positions" method="_on_ready"]
+[connection signal="toggled" from="User Inputs/Toggles/Update Positions" to="User Inputs/Toggles/Update Positions" method="_on_toggled"]

@@ -4,6 +4,8 @@ func _on_ready() -> void:
 	var game_node = get_node("/root/Game");
 
 	match name:
+		"Update Positions":
+			button_pressed = game_node.simulate_physics;
 		"Show Pressure":
 			button_pressed = game_node.show_pressure_direction_debug ;
 		"Show Grid":
@@ -16,6 +18,8 @@ func _on_ready() -> void:
 func _on_toggled(toggled_on: bool) -> void:
 	var game_node = get_node("/root/Game");
 	match name:
+		"Update Positions":
+			game_node.simulate_physics = toggled_on;
 		"Show Pressure":
 			game_node.show_pressure_direction_debug = toggled_on;
 		"Show Grid":
